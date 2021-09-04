@@ -1,4 +1,4 @@
-package com.harisewak.downloadmanager.downloader
+package com.harisewak.downloader
 
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread

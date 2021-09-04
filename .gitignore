@@ -17,3 +17,4 @@ local.properties
 app/.gitignore
 /app/src/androidTest/java/com/harisewak/downloadmanager/ExampleInstrumentedTest.kt
 /app/src/test/java/com/harisewak/downloadmanager/ExampleUnitTest.kt
+/downloader/.gitignore

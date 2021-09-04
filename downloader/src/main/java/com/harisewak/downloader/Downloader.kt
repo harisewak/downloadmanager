@@ -2,16 +2,14 @@ package com.harisewak.downloadmanager.downloader
 
 import android.net.Uri
 import android.os.Build
-import android.util.Log
-import com.harisewak.downloadmanager.downloader.DownloadFactory.DownloadCode
-import com.harisewak.downloadmanager.other.logd
+import com.harisewak.downloader.Callback
+import com.harisewak.downloader.other.logd
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
-import java.io.RandomAccessFile
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -23,7 +21,8 @@ object Downloader {
     private val downloadQueue: ArrayList<Request> = arrayListOf()
     private var curDownloadPos = -1
 
-    fun download(path: String, urlStr: String, callback: Callback) {
+    fun enqueue(path: String, urlStr: String, callback: Callback) {
+
         this.callback = callback
 
         val request = Request(urlStr, path)

@@ -1,10 +1,9 @@
 package com.harisewak.view
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import com.harisewak.downloadmanager.R
+import androidx.appcompat.app.AppCompatActivity
+import com.harisewak.downloader.Callback
 import com.harisewak.downloadmanager.databinding.ActivityDownloadsBinding
-import com.harisewak.downloadmanager.downloader.Callback
 import com.harisewak.downloadmanager.downloader.Downloader
 import com.harisewak.downloadmanager.other.logd
 
@@ -40,19 +39,19 @@ class DownloadsActivity : AppCompatActivity() {
 
             // Making multiple requests
 
-            Downloader.download(
+            Downloader.enqueue(
                 filePath,
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
                 callback
             )
 
-            Downloader.download(
+            Downloader.enqueue(
                 filePath,
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
                 callback
             )
 
-            Downloader.download(
+            Downloader.enqueue(
                 filePath,
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
                 callback
