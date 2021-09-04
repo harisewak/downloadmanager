@@ -18,3 +18,5 @@ app/.gitignore
 /app/src/androidTest/java/com/harisewak/downloadmanager/ExampleInstrumentedTest.kt
 /app/src/test/java/com/harisewak/downloadmanager/ExampleUnitTest.kt
 /downloader/.gitignore
+/downloader/src/androidTest/java/com/harisewak/downloader/ExampleInstrumentedTest.kt
+/downloader/src/test/java/com/harisewak/downloader/ExampleUnitTest.kt

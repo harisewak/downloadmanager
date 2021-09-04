@@ -3,8 +3,8 @@ package com.harisewak.view
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.harisewak.downloader.Callback
+import com.harisewak.downloader.Downloader
 import com.harisewak.downloadmanager.databinding.ActivityDownloadsBinding
-import com.harisewak.downloadmanager.downloader.Downloader
 import com.harisewak.downloadmanager.other.logd
 
 class DownloadsActivity : AppCompatActivity() {
@@ -19,8 +19,6 @@ class DownloadsActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         binding.btDownload.setOnClickListener {
-
-            val filePath = filesDir.absolutePath
 
             val callback = object : Callback {
                 override fun progress(progress: Long, total: Long) {
@@ -39,24 +37,26 @@ class DownloadsActivity : AppCompatActivity() {
 
             // Making multiple requests
 
-            Downloader.enqueue(
-                filePath,
+            Downloader.with(
+                applicationContext,
+                callback
+            ).enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-                callback
             )
 
-            Downloader.enqueue(
-                filePath,
+            Downloader.with(
+                applicationContext,
+                callback
+            ).enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
-                callback
             )
 
-            Downloader.enqueue(
-                filePath,
+            Downloader.with(
+                applicationContext,
+                callback
+            ).enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-                callback
             )
-
 
         }
     }
