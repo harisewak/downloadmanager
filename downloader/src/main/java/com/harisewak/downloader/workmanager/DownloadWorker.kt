@@ -4,127 +4,179 @@ import android.content.Context
 import android.net.Uri
 import android.os.Build
 import androidx.work.CoroutineWorker
+import androidx.work.Data
 import androidx.work.WorkerParameters
 import com.harisewak.downloader.DownloadStatus
-import com.harisewak.downloader.Downloader
-import com.harisewak.downloader.other.logd
+import com.harisewak.downloader.other.*
+import com.harisewak.downloader.room.DatabaseUtil
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-const val BUFFER_SIZE = 4096
-
-
-class DownloadWorker(appContext: Context, workerParams: WorkerParameters):
+class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
 
-    override suspend fun doWork(): Result {
-
-        performSequentialDownloads()
-
-        return Result.success()
+    private val requestDao by lazy {
+        DatabaseUtil
+            .requestDao(appContext)
     }
 
-    fun performSequentialDownloads() {
+    private val downloadDirPath = appContext.filesDir.absolutePath
 
-        // exit if all requests have been consumed
-        if (Downloader.curDownloadPos >= Downloader.downloadQueue.size) {
-            return
+
+    override suspend fun doWork(): Result {
+        return executeDownloadRequest()
+    }
+
+//    When executed, request details are updated in db
+
+    suspend fun executeDownloadRequest(): Result {
+
+        val requestId = inputData.getLong(REQUEST_ID, -1L)
+
+        if (requestId == -1L) {
+            // todo handle error
+
+            val inputData = Data.Builder()
+                .putInt(REASON, REASON_DATABASE_ERROR)
+                .putString(MESSAGE, "request ID cannot be negative")
+                .build()
+
+            return Result.failure(inputData)
         }
 
-        val request = Downloader.downloadQueue[Downloader.curDownloadPos]
-
-        logd("processing request: ${request.url}")
+        val request = requestDao.findById(requestId)
 
         request.isDownloading = true
 
-        val path = File(Downloader.path)
+        val downloadDir = File(downloadDirPath)
 
-        if (!path.exists()) {
-            Downloader.callback.failure("File cannot be created. Do you have Storage Permission?")
-            return
+        // first exit
+        if (!downloadDir.exists()) {
+            request.status = DownloadStatus.FAILED
+            request.isDownloading = false
+            requestDao.update(request)
+
+            val inputData = Data.Builder()
+                .putInt(REASON, REASON_STORAGE_ERROR)
+                .putString(MESSAGE, "Download directory does not exist!")
+                .build()
+
+            return Result.failure(inputData)
         }
 
         val fileName = Uri.parse(request.url).lastPathSegment
 
-        val filePath = Downloader.path + File.separator + fileName
+        val filePath = downloadDirPath + File.separator + fileName
 
         val file = File(filePath)
 
         var urlConnection: HttpURLConnection? = null
-        var inputStream: InputStream? = null
+        val inputStream: InputStream?
         var readCounter = 0
 
+        var result = Result.failure() // default value
+
         try {
+
             val url = URL(request.url)
             urlConnection = url.openConnection() as HttpURLConnection
             urlConnection.setRequestProperty("Connection", "Keep-Alive")
 
             val responseCode = urlConnection.responseCode
 
+            // second exit
             if (responseCode != HttpURLConnection.HTTP_OK) {
+
                 request.status = DownloadStatus.FAILED
                 request.isDownloading = false
-                Downloader.callback.failure("Download failed: $responseCode")
 
-            } else {
+                requestDao.update(request)
 
-                val contentLength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    urlConnection.contentLengthLong
-                } else {
-                    urlConnection.contentLength.toLong()
-                }
+                val inputData = Data.Builder()
+                    .putInt(REASON, REASON_RESPONSE_NOT_OK)
+                    .build()
 
-                request.total = contentLength
-
-                inputStream = urlConnection.inputStream
-
-                var bytesRead: Int
-
-                val buffer = ByteArray(BUFFER_SIZE)
-
-                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                    readCounter++
-                    file.appendBytes(buffer)
-
-                    request.downloaded += bytesRead.toLong()
-
-                    if (readCounter % 64 == 0) {
-                        when (request.status) {
-                            DownloadStatus.CANCELLED -> {
-                                Downloader.callback.failure("Download has been cancelled")
-                                return
-                            }
-                            else -> {
-                                // updating progress
-                                if (readCounter % 16 == 0)
-                                    Downloader.callback.progress(
-                                        request.downloaded,
-                                        request.total
-                                    )
-                            }
-                        }
-                    }
-                }
-
-                request.isDownloading = false
-                Downloader.callback.success()
-                inputStream.close()
+                return Result.failure(inputData)
             }
+
+            val contentLength = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                urlConnection.contentLengthLong
+            } else {
+                urlConnection.contentLength.toLong()
+            }
+
+            request.total = contentLength
+
+            inputStream = urlConnection.inputStream
+
+            var bytesRead: Int
+
+            val buffer = ByteArray(BUFFER_SIZE)
+
+            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+
+                readCounter++
+                file.appendBytes(buffer)
+
+                request.downloaded += bytesRead.toLong()
+
+                if (readCounter % 64 == 0) {
+
+                    // third exit
+                    if (request.status == DownloadStatus.CANCELLED) {
+                        request.isDownloading = false
+                        requestDao.update(request)
+
+                        val inputData = Data.Builder()
+                            .putInt(REASON, REASON_CANCELLED)
+                            .build()
+
+                        return Result.failure(inputData)
+                    }
+
+                    // updating progress
+                    if (readCounter % 16 == 0) {
+                        requestDao.update(request)
+                    }
+
+                }
+            }
+
+            request.isDownloading = false
+            request.status = DownloadStatus.DOWNLOADED
+
+            inputStream.close()
+
+            // update request details in db
+            requestDao.update(request)
+
+            return Result.success()
+
         } catch (e: IOException) {
 
             e.printStackTrace()
+
             request.isDownloading = false
             request.status = DownloadStatus.FAILED
-            Downloader.callback.failure("Download failed: $e")
+
+            requestDao.update(request)
+
+            val inputData = Data.Builder()
+                .putInt(REASON, REASON_NETWORK_FAILURE)
+                .putString(MESSAGE, e.message)
+                .build()
+
+            return Result.failure(inputData)
 
         } finally {
+
             urlConnection?.disconnect()
-            Downloader.curDownloadPos++
-            performSequentialDownloads()
+
         }
+
     }
 
 }

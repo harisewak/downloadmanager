@@ -8,13 +8,13 @@ import kotlinx.coroutines.flow.Flow
 interface RequestDao {
 
     @Insert
-    suspend fun add(request: Request)
+    suspend fun add(request: Request): Long
 
     @Update
     suspend fun update(request: Request)
 
     @Query("SELECT * FROM request")
-    suspend fun getAll(): Flow<List<Request>>
+    fun getAll(): Flow<List<Request>>
 
     @Query("SELECT * FROM request WHERE id = :id LIMIT 1")
     suspend fun findById(id: Long): Request

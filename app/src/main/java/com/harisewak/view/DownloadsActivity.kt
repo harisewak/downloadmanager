@@ -11,6 +11,10 @@ class DownloadsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDownloadsBinding
 
+    private val downloader by lazy {
+        Downloader(applicationContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -37,27 +41,42 @@ class DownloadsActivity : AppCompatActivity() {
 
             // Making multiple requests
 
-            Downloader.with(
-                applicationContext,
-                callback
-            ).enqueue(
+            downloader.enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
             )
 
-            Downloader.with(
-                applicationContext,
-                callback
-            ).enqueue(
+            downloader.enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
             )
 
-            Downloader.with(
-                applicationContext,
-                callback
-            ).enqueue(
+            downloader.enqueue(
                 "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
             )
 
+//            Downloader.with(
+//                applicationContext,
+//                callback
+//            ).enqueue(
+//                "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+//            )
+//
+//            Downloader.with(
+//                applicationContext,
+//                callback
+//            ).enqueue(
+//                "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+//            )
+//
+//            Downloader.with(
+//                applicationContext,
+//                callback
+//            ).enqueue(
+//                "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+//            )
+
+
         }
+
+
     }
 }
