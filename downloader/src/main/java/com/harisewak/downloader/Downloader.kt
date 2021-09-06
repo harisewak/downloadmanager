@@ -17,6 +17,9 @@ import kotlinx.coroutines.launch
 * When executed, request details are updated in db
 * */
 
+// NOTE: Use a single instance for all operations, in future consider making this class a singleton.
+// It requires context for db & workmanager operations hence kept as class for now.
+
 class Downloader(private val context: Context) {
 
     val downloadDirPath by lazy {
