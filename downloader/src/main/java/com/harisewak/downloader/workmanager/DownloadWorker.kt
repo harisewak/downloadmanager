@@ -31,13 +31,11 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
     }
 
 //    When executed, request details are updated in db
-
     suspend fun executeDownloadRequest(): Result {
 
         val requestId = inputData.getLong(REQUEST_ID, -1L)
 
         if (requestId == -1L) {
-            // todo handle error
 
             val inputData = Data.Builder()
                 .putInt(REASON, REASON_DATABASE_ERROR)
@@ -77,8 +75,6 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
         val inputStream: InputStream?
         var readCounter = 0
 
-        var result = Result.failure() // default value
-
         try {
 
             val url = URL(request.url)
@@ -110,7 +106,9 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
             request.total = contentLength
 
-            inputStream = urlConnection.inputStream
+            inputStream = BufferedInputStream(urlConnection.inputStream)
+
+            val fileOutputStream = FileOutputStream(file)
 
             var bytesRead: Int
 
@@ -119,7 +117,8 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
             while (inputStream.read(buffer).also { bytesRead = it } != -1) {
 
                 readCounter++
-                file.appendBytes(buffer)
+
+                fileOutputStream.write(buffer, 0, bytesRead)
 
                 request.downloaded += bytesRead.toLong()
 
