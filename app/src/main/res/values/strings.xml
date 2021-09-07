@@ -3,4 +3,6 @@
     <string name="hint_paste_url_here">Paste URL here...</string>
     <string name="btn_download">Download</string>
     <string name="error_invalid_url">Entered URL is invalid</string>
+    <string name="msg_storage_permission_rationale">Storage permission is necessary for download manager to save files on device storage</string>
+    <string name="msg_storage_permission_required">Download manager needs Storage permission to run. Kindly enable it from App Settings</string>
 </resources>

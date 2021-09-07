@@ -1,5 +1,8 @@
 package com.harisewak.downloadmanager.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.webkit.URLUtil
 import androidx.activity.viewModels
@@ -14,15 +17,21 @@ import javax.inject.Inject
 import android.view.Gravity
 
 import android.widget.FrameLayout
+import androidx.annotation.RequiresApi
+import androidx.core.app.ActivityCompat
+import androidx.core.app.ActivityCompat.requestPermissions
+import androidx.core.content.ContextCompat
 
 import com.google.android.material.snackbar.Snackbar
 import com.harisewak.downloadmanager.R
+import com.harisewak.downloadmanager.other.BaseActivity
 
 
 @AndroidEntryPoint
-class DownloadListActivity : AppCompatActivity() {
+class DownloadListActivity : BaseActivity() {
 
     private val viewModel: DownloadListViewModel by viewModels()
+
     private lateinit var binding: ActivityDownloadListBinding
 
     @Inject
@@ -53,14 +62,48 @@ class DownloadListActivity : AppCompatActivity() {
 
     }
 
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onPermissionGranted() {
+        downloadClicked(binding.etUrl.text.toString())
+    }
+
+    override fun showPermissionRationale() {
+        showSnackbar(getString(R.string.msg_storage_permission_rationale))
+    }
+
+    override fun showPermissionRequired() {
+        showSnackbar(getString(R.string.msg_storage_permission_required))
+    }
+
+
     private fun downloadClicked(inputText: String) {
-        // verify download url
-        if (URLUtil.isValidUrl(inputText)) {
-            // pass it to downloader
-            downloader.enqueue(inputText)
+
+        if (isStoragePermissionGranted()) {
+
+            if (URLUtil.isValidUrl(inputText)) {
+
+                downloader.enqueue(inputText)
+
+            } else {
+
+                showSnackbar(getString(R.string.error_invalid_url))
+
+            }
+
         } else {
-            showSnackbar(getString(R.string.error_invalid_url))
+            requestStoragePermission()
         }
+
+
     }
 
     private fun setDummyData() {
