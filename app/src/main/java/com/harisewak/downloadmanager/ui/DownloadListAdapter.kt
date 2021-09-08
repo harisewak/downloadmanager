@@ -10,6 +10,7 @@ import com.harisewak.downloader.Downloader
 import com.harisewak.downloader.Request
 import com.harisewak.downloadmanager.R
 import com.harisewak.downloadmanager.databinding.ItemDownloadBinding
+import com.harisewak.downloadmanager.other.logd
 import com.harisewak.downloadmanager.ui.DownloadListActivity
 import javax.inject.Inject
 
@@ -61,6 +62,8 @@ class DownloadListAdapter() :
                 pbPercentage.progress = currProgress
                 tvPercentage.text = "${currProgress}%"
 
+                logd("adapter: download progress -> $currProgress")
+
                 when (item.status) {
                     DownloadStatus.DOWNLOADED, DownloadStatus.DOWNLOADING, DownloadStatus.QUEUED -> {
                         pbPercentage.progressDrawable =
@@ -103,8 +106,9 @@ class DownloadListAdapter() :
         }
 
         private fun calcProgress(downloaded: Long, total: Long): Int {
+            logd("adapter: downloaded -> $downloaded, total -> $total")
             if (total == 0L) return 0; // Initially total is 0. Adding check to avoid ArithmeticException
-            return ((downloaded / total) * 100).toInt()
+            return ((downloaded.toFloat() / total.toFloat()) * 100).toInt()
         }
     }
 }

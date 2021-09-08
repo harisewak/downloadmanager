@@ -145,8 +145,20 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                     }
 
                     // updating progress
-                    if (readCounter % 16 == 0) {
-                        requestDao.update(request)
+                    if (readCounter % 4 == 0) {
+                        logd("file name: ${request.fileName}, downloaded: ${request.downloaded}, status: ${request.status}")
+
+                        requestDao.update(
+                            requestId,
+                            request.downloaded,
+                            request.total,
+                            request.status
+                        )
+
+//                        val requestProgressUpdated = requestDao.findById(request.id)
+//                        requestProgressUpdated.downloaded = request.downloaded
+//
+//                        requestDao.update(requestProgressUpdated)
                     }
 
                 }

@@ -1,6 +1,7 @@
 package com.harisewak.downloader.room
 
 import androidx.room.*
+import com.harisewak.downloader.DownloadStatus
 import com.harisewak.downloader.Request
 import kotlinx.coroutines.flow.Flow
 
@@ -12,6 +13,9 @@ interface RequestDao {
 
     @Update
     suspend fun update(request: Request)
+
+    @Query("UPDATE request SET downloaded=:downloaded, total=:total, status=:status WHERE id = :id")
+    suspend fun update(id: Long, downloaded: Long, total: Long, status: DownloadStatus)
 
     @Query("SELECT * FROM request")
     fun getAll(): Flow<List<Request>>
