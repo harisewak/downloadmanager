@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">DownloadManager</string>
+    <string name="app_name">Download Manager</string>
     <string name="hint_paste_url_here">Paste URL here...</string>
     <string name="btn_download">Download</string>
     <string name="error_invalid_url">Entered URL is invalid</string>
