@@ -124,10 +124,14 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
                 if (readCounter % 64 == 0) {
 
-                    // third exit
-                    if (request.status == DownloadStatus.CANCELLED) {
-                        request.isDownloading = false
-                        requestDao.update(request)
+                    val updateRequest = requestDao.findById(requestId)
+
+                    // check if request was cancelled, cancel download and delete request from database
+                    if (updateRequest.status == DownloadStatus.CANCELLED) {
+
+                        updateRequest.isDownloading = false
+
+                        requestDao.delete(updateRequest)
 
                         val inputData = Data.Builder()
                             .putInt(REASON, REASON_CANCELLED)

@@ -19,6 +19,9 @@ interface RequestDao {
     @Query("SELECT * FROM request WHERE id = :id LIMIT 1")
     suspend fun findById(id: Long): Request
 
+    @Query("SELECT * FROM request WHERE url = :url LIMIT 1")
+    suspend fun findByUrl(url: String): Request?
+
     @Delete
     suspend fun delete(request: Request)
 

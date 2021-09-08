@@ -13,6 +13,7 @@ data class Request(
     var isDownloading: Boolean = false,
     var total: Long = 0,
     var downloaded: Long = 0,
+    var workRequestId: String? = null
 )
 
 enum class DownloadStatus {

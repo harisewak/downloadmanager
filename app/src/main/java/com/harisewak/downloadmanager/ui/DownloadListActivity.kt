@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.snackbar.Snackbar
 import com.harisewak.downloadmanager.R
 import com.harisewak.downloadmanager.other.BaseActivity
+import com.harisewak.downloadmanager.other.logd
 
 
 @AndroidEntryPoint
@@ -48,7 +49,20 @@ class DownloadListActivity : BaseActivity() {
 
         setListeners()
 
-        setDummyData()
+        observeData()
+    }
+
+    private fun observeData() {
+
+        downloader.observe(this, { downloads ->
+            downloads.forEach {
+                logd("download: ${it.filePath}, workRequestId: ${it.workRequestId}")
+            }
+
+            downloadListAdapter.submitList(downloads)
+            binding.rvDownloads.adapter = downloadListAdapter
+        })
+
     }
 
     private fun setListeners() {
@@ -59,6 +73,27 @@ class DownloadListActivity : BaseActivity() {
         }
 
         binding.btDownload.setOnClickListener { downloadClicked(binding.etUrl.text.toString()) }
+
+        downloader.setListener(object : Downloader.Callback {
+
+            override fun onError(message: String) {
+                showSnackbar(message)
+            }
+
+        })
+
+
+        downloadListAdapter.setListener(object : Callback {
+
+            override fun cancelRequest(id: Long) {
+                downloader.cancelRequest(id)
+            }
+
+            override fun retry(url: String) {
+                downloader.enqueue(url)
+            }
+
+        })
 
     }
 
@@ -128,6 +163,13 @@ class DownloadListActivity : BaseActivity() {
         params.gravity = Gravity.TOP
         view.layoutParams = params
         snack.show()
+    }
+
+
+    // listener for callbacks from adapter
+    interface Callback {
+        fun cancelRequest(id: Long)
+        fun retry(url: String)
     }
 
 
