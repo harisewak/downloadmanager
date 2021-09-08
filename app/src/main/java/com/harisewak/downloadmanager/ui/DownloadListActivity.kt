@@ -93,6 +93,10 @@ class DownloadListActivity : BaseActivity() {
 
                 downloader.enqueue(inputText)
 
+                binding.etUrl.text.clear()
+
+                hideKeyboard()
+
             } else {
 
                 showSnackbar(getString(R.string.error_invalid_url))

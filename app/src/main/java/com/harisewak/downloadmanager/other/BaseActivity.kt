@@ -1,8 +1,12 @@
 package com.harisewak.downloadmanager.other
 
 import android.Manifest
+import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -54,5 +58,14 @@ abstract class BaseActivity : AppCompatActivity() {
     abstract fun showPermissionRationale()
 
     abstract fun showPermissionRequired()
+
+    fun hideKeyboard() {
+        hideKeyboard(currentFocus ?: View(this))
+    }
+
+    private fun hideKeyboard(view: View) {
+        val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
+    }
 
 }
