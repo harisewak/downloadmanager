@@ -3,17 +3,20 @@ package com.harisewak.downloader.workmanager
 import android.content.Context
 import android.net.Uri
 import android.os.Build
-import androidx.work.CoroutineWorker
-import androidx.work.Data
-import androidx.work.WorkerParameters
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
+import androidx.work.*
 import com.harisewak.downloader.DownloadStatus
+import com.harisewak.downloader.R
 import com.harisewak.downloader.other.*
 import com.harisewak.downloader.room.DatabaseUtil
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
+import java.io.*
 import java.net.HttpURLConnection
 import java.net.URL
+import android.app.NotificationManager
+
+import android.app.NotificationChannel
+
 
 class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
     CoroutineWorker(appContext, workerParams) {
@@ -23,17 +26,81 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
             .requestDao(appContext)
     }
 
-    private val downloadDirPath = appContext.filesDir.absolutePath
+    var notificationBuilder: NotificationCompat.Builder? = null
+    var notificationManager: NotificationManager? = null
 
-
-    override suspend fun doWork(): Result {
-        return executeDownloadRequest()
+    init {
+        notificationManager =
+            applicationContext.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
     }
 
-//    When executed, request details are updated in db
-    suspend fun executeDownloadRequest(): Result {
+    private fun createForegroundInfo(requestId: Long): ForegroundInfo {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createNotificationChannel(notificationManager)
+        }
+
+        notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setContentTitle(CHANNEL_NAME)
+            .setSmallIcon(R.drawable.ic_work_notification)
+            .setOngoing(true)
+
+        return ForegroundInfo(requestId.toInt(), notificationBuilder!!.build())
+
+    }
+
+    private fun showProgressNotification(
+        requestId: Long,
+        fileName: String,
+        progressPercent: String,
+        progress: Int,
+        notificationManager: NotificationManager?
+    ) {
+
+        val notification = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_work_notification)
+            .setContentTitle(fileName)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setOngoing(true)
+            .setStyle(NotificationCompat.BigTextStyle())
+            .setContentText(progressPercent)
+            .setProgress(100, progress, false)
+            .build()
+
+        notificationManager?.notify(requestId.toInt(), notification)
+
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createNotificationChannel(notificationManager: NotificationManager?) {
+
+        var notificationChannel =
+            notificationManager?.getNotificationChannel(CHANNEL_ID)
+        if (notificationChannel == null) {
+            notificationChannel = NotificationChannel(
+                CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH
+            )
+            notificationManager?.createNotificationChannel(notificationChannel)
+        }
+
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun doWork(): Result {
 
         val requestId = inputData.getLong(REQUEST_ID, -1L)
+
+        setForeground(createForegroundInfo(requestId))
+
+        return executeDownloadRequest(requestId)
+
+    }
+
+
+    //    When executed, request details are updated in db
+    suspend fun executeDownloadRequest(requestId: Long): Result {
 
         if (requestId == -1L) {
 
@@ -42,12 +109,27 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                 .putString(MESSAGE, "request ID cannot be negative")
                 .build()
 
+            logd("request ID cannot be negative")
+
+            return Result.failure(inputData)
+        }
+
+        if (downloadDirPath == null) {
+
+            val inputData = Data.Builder()
+                .putInt(REASON, REASON_STORAGE_ERROR)
+                .putString(MESSAGE, "Download directory is not accessible")
+                .build()
+
+            logd("Download directory is not accessible")
+
             return Result.failure(inputData)
         }
 
         val request = requestDao.findById(requestId)
 
         request.isDownloading = true
+        request.status = DownloadStatus.DOWNLOADING
 
         val downloadDir = File(downloadDirPath)
 
@@ -61,6 +143,8 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                 .putInt(REASON, REASON_STORAGE_ERROR)
                 .putString(MESSAGE, "Download directory does not exist!")
                 .build()
+
+            logd("Download directory does not exist!")
 
             return Result.failure(inputData)
         }
@@ -128,14 +212,14 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
                 if (readCounter % 64 == 0) {
 
-                    val updateRequest = requestDao.findById(requestId)
+                    val requestToCancel = requestDao.findById(requestId)
 
                     // check if request was cancelled, cancel download and delete request from database
-                    if (updateRequest.status == DownloadStatus.CANCELLED) {
+                    if (requestToCancel.status == DownloadStatus.CANCELLED) {
 
-                        updateRequest.isDownloading = false
+                        requestToCancel.isDownloading = false
 
-                        requestDao.delete(updateRequest)
+                        requestDao.delete(requestToCancel)
 
                         val inputData = Data.Builder()
                             .putInt(REASON, REASON_CANCELLED)
@@ -145,7 +229,7 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                     }
 
                     // updating progress
-                    if (readCounter % 4 == 0) {
+                    if (readCounter % PROGRESS_UPDATE_INTERVAL == 0) {
                         logd("file name: ${request.fileName}, downloaded: ${request.downloaded}, status: ${request.status}")
 
                         requestDao.update(
@@ -155,10 +239,21 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                             request.status
                         )
 
-//                        val requestProgressUpdated = requestDao.findById(request.id)
-//                        requestProgressUpdated.downloaded = request.downloaded
-//
-//                        requestDao.update(requestProgressUpdated)
+                        val progress = calcProgress(
+                            request.downloaded,
+                            request.total
+                        )
+
+                        val progressText = "$progress% downloaded"
+
+                        showProgressNotification(
+                            requestId,
+                            request.fileName!!,
+                            progressText,
+                            progress,
+                            notificationManager
+                        )
+
                     }
 
                 }
@@ -198,6 +293,16 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
         }
 
+    }
+
+    val downloadDirPath: String? by lazy {
+        appContext.filesDir.absolutePath
+    }
+
+    private fun calcProgress(downloaded: Long, total: Long): Int {
+        logd("adapter: downloaded -> $downloaded, total -> $total")
+        if (total == 0L) return 0; // Initially total is 0. Adding check to avoid ArithmeticException
+        return ((downloaded.toFloat() / total.toFloat()) * 100).toInt()
     }
 
 }
