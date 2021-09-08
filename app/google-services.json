@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "162135267204",
+    "project_id": "downloadmanager-17abc",
+    "storage_bucket": "downloadmanager-17abc.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162135267204:android:289de2591a0dd68a122fd1",
+        "android_client_info": {
+          "package_name": "com.harisewak.downloadmanager"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "162135267204-hq7i3bptl8kl9lha4s283k6rikjo9h1p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4lKQnJymcJVHIaio29p5oeXA_gICN5YA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "162135267204-hq7i3bptl8kl9lha4s283k6rikjo9h1p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -36,6 +36,7 @@ class DownloadListActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         binding = ActivityDownloadListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
