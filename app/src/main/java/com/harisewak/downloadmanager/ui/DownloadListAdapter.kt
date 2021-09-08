@@ -4,18 +4,43 @@ import android.annotation.SuppressLint
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.harisewak.downloader.DownloadStatus
-import com.harisewak.downloader.Downloader
 import com.harisewak.downloader.Request
 import com.harisewak.downloadmanager.R
 import com.harisewak.downloadmanager.databinding.ItemDownloadBinding
 import com.harisewak.downloadmanager.other.logd
 import com.harisewak.downloadmanager.ui.DownloadListActivity
-import javax.inject.Inject
 
-class DownloadListAdapter() :
-    RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+class DownloadListAdapter :
+    ListAdapter<Request, DownloadListAdapter.DownloadItemViewHolder>(DIFF_CALLBACK) {
+
+    companion object {
+
+        val DIFF_CALLBACK =
+
+            object : DiffUtil.ItemCallback<Request>() {
+
+                override
+                fun areItemsTheSame(
+                    oldRequest: Request, newRequest: Request
+                ): Boolean {
+                    // Request properties may have changed if reloaded from the DB, but ID is fixed
+                    return oldRequest.id == newRequest.id;
+                }
+
+                override
+                fun areContentsTheSame(
+                    oldRequest: Request, newRequest: Request
+                ): Boolean {
+                    // NOTE: if you use equals, your object must properly override Object#equals()
+                    // Incorrectly returning false here will result in too many animations.
+                    return oldRequest.equals(newRequest);
+                }
+            }
+    }
 
     private lateinit var callback: DownloadListActivity.Callback
 
@@ -24,34 +49,23 @@ class DownloadListAdapter() :
     }
 
 
-    lateinit var resultsItem: MutableList<Request>
 
-    fun submitList(resultsItem: List<Request>) {
-        this.resultsItem = resultsItem.toMutableList()
-    }
-
-    override fun onCreateViewHolder(parent: ViewGroup, position: Int): RecyclerView.ViewHolder {
-
+    override fun onCreateViewHolder(parent: ViewGroup, position: Int): DownloadItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding = ItemDownloadBinding.inflate(inflater, parent, false)
         return DownloadItemViewHolder(binding)
     }
 
-    override fun getItemCount(): Int {
-        return resultsItem.size
-    }
-
-    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-        val viewHolder = holder as DownloadItemViewHolder
-        viewHolder.bindViews(position)
+    override fun onBindViewHolder(holder: DownloadItemViewHolder, position: Int) {
+        holder.bind(position)
     }
 
     inner class DownloadItemViewHolder(val binding: ItemDownloadBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         @SuppressLint("CheckResult")
-        fun bindViews(position: Int) {
-            val item = resultsItem[position]
+        fun bind(position: Int) {
+            val item = currentList[position]
 
             with(binding) {
                 tvFileName.text = item.fileName
