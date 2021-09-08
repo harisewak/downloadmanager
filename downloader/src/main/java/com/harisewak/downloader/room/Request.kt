@@ -10,6 +10,8 @@ import java.util.*
 data class Request(
     @PrimaryKey(autoGenerate = true) var id: Long? = null, // default value added to avoid passing it while creating request. Should NEVER be used.
     val url: String,
+    var fileName: String? = null,
+    var filePath: String? = null,
     var status: DownloadStatus = DownloadStatus.QUEUED,
     var isDownloading: Boolean = false,
     var total: Long = 0,

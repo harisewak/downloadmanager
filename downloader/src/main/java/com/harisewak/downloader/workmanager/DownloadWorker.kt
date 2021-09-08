@@ -67,7 +67,11 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
         val fileName = Uri.parse(request.url).lastPathSegment
 
+        request.fileName = fileName
+
         val filePath = downloadDirPath + File.separator + fileName
+
+        request.filePath = filePath
 
         val file = File(filePath)
 
