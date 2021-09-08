@@ -37,6 +37,24 @@ class Downloader(private val context: Context) {
     // User requests a download
     private suspend fun download(url: String) {
 
+        // check for existing request
+        val existingRequest = DatabaseUtil.requestDao(context).findByUrl(url)
+
+        // if existing request is in queued or downloading state, skip it
+        if (existingRequest != null && (existingRequest.status == DownloadStatus.QUEUED || existingRequest.status == DownloadStatus.DOWNLOADING)) {
+            listener.onError(context.getString(R.string.msg_request_exists))
+            return
+        }
+
+        // existing request is in cancelled or failed state, retry
+        if (existingRequest != null && (existingRequest.status == DownloadStatus.CANCELLED || existingRequest.status == DownloadStatus.FAILED)) {
+            // cancel existing work request and delete entry from database
+            WorkManager.getInstance(context)
+                .cancelWorkById(UUID.fromString(existingRequest.workRequestId!!))
+
+            DatabaseUtil.requestDao(context).delete(existingRequest)
+        }
+
         // A request is created in queued state
         val request = Request(
             url = url
