@@ -3,6 +3,7 @@ package com.harisewak.downloader
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import java.util.*
 
 // Download request
 @Entity

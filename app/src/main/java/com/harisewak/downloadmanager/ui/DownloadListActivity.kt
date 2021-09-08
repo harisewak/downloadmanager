@@ -1,12 +1,9 @@
 package com.harisewak.downloadmanager.ui
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.webkit.URLUtil
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatActivity
 import com.harisewak.downloader.Downloader
 import com.harisewak.downloadmanager.databinding.ActivityDownloadListBinding
 import com.harisewak.ui.DownloadListAdapter
@@ -18,9 +15,6 @@ import android.view.Gravity
 
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
-import androidx.core.app.ActivityCompat
-import androidx.core.app.ActivityCompat.requestPermissions
-import androidx.core.content.ContextCompat
 
 import com.google.android.material.snackbar.Snackbar
 import com.harisewak.downloadmanager.R
@@ -30,8 +24,6 @@ import com.harisewak.downloadmanager.other.logd
 
 @AndroidEntryPoint
 class DownloadListActivity : BaseActivity() {
-
-    private val viewModel: DownloadListViewModel by viewModels()
 
     private lateinit var binding: ActivityDownloadListBinding
 
@@ -152,8 +144,8 @@ class DownloadListActivity : BaseActivity() {
         list.add(Status("My File name.txt", PROGRESS, 10))
         list.add(Status("My File name.mp3", FAILED, 90))
 
-        downloadListAdapter.setStatus(list)
-        binding.rvDownloads.adapter = downloadListAdapter
+//        downloadListAdapter.setStatus(list)
+//        binding.rvDownloads.adapter = downloadListAdapter
     }
 
     fun showSnackbar(message: String) {

@@ -167,10 +167,12 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
             requestDao.update(request)
 
-            val inputData = Data.Builder()
-                .putInt(REASON, REASON_NETWORK_FAILURE)
-                .putString(MESSAGE, e.message)
-                .build()
+//            val inputData = Data.Builder()
+//                .putInt(REASON, REASON_NETWORK_FAILURE)
+//                .putString(MESSAGE, e.message)
+//                .build()
+//
+//            return Result.failure(inputData)
 
             return Result.retry()
 
