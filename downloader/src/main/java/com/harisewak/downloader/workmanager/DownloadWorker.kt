@@ -131,12 +131,18 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
         val request = requestDao.findById(requestId)
 
+        // NOTE: Resetting below values to overcome edge case -
+        // When app is killed & restarted, WorkManager restarts request and appends to existing download count
+        request.apply {
+            downloaded = 0L
+            total = 0L
+        }
+
         request.isDownloading = true
         request.status = DownloadStatus.DOWNLOADING
 
         val downloadDir = File(downloadDirPath)
 
-        // first exit
         if (!downloadDir.exists()) {
             request.status = DownloadStatus.FAILED
             request.isDownloading = false
@@ -159,6 +165,8 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
         val filePath = downloadDirPath + File.separator + fileName
 
         request.filePath = filePath
+
+        requestDao.update(request)
 
         var urlConnection: HttpURLConnection? = null
         val inputStream: InputStream?
@@ -278,13 +286,6 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
             request.status = DownloadStatus.FAILED
 
             requestDao.update(request)
-
-//            val inputData = Data.Builder()
-//                .putInt(REASON, REASON_NETWORK_FAILURE)
-//                .putString(MESSAGE, e.message)
-//                .build()
-//
-//            return Result.failure(inputData)
 
             return Result.retry()
 
