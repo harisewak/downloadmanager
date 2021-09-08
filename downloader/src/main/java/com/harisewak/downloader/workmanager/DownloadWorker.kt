@@ -16,6 +16,9 @@ import java.net.URL
 import android.app.NotificationManager
 
 import android.app.NotificationChannel
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
 
 
 class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
@@ -157,8 +160,6 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
         request.filePath = filePath
 
-        val file = File(filePath)
-
         var urlConnection: HttpURLConnection? = null
         val inputStream: InputStream?
         var readCounter = 0
@@ -196,7 +197,7 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
             inputStream = BufferedInputStream(urlConnection.inputStream)
 
-            val fileOutputStream = FileOutputStream(file)
+            val fileOutputStream = getOutputStream(fileName)
 
             var bytesRead: Int
 
@@ -295,8 +296,38 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
 
     }
 
-    val downloadDirPath: String? by lazy {
-        appContext.filesDir.absolutePath
+    private fun getOutputStream(fileName: String?): OutputStream {
+
+        val resolver = applicationContext.contentResolver
+
+        val values = ContentValues()
+        values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+        values.put(MediaStore.MediaColumns.MIME_TYPE, "*/*")
+        values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+
+        val uri = resolver.insert(MediaStore.Files.getContentUri("external"), values)
+
+        val outputStream = resolver.openOutputStream(uri!!)!!
+
+        return outputStream
+    }
+
+    private val downloadDirPath: String? by lazy {
+
+        var dir: File? = null
+
+        dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+
+        // Make sure the path directory exists.
+        if (!dir.exists()) {
+            // Make it, if it doesn't exit
+            val success = dir.mkdirs()
+            if (!success) {
+                dir = null
+            }
+        }
+
+        dir?.path
     }
 
     private fun calcProgress(downloaded: Long, total: Long): Int {
