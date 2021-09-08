@@ -168,7 +168,7 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                 .putString(MESSAGE, e.message)
                 .build()
 
-            return Result.failure(inputData)
+            return Result.retry()
 
         } finally {
 

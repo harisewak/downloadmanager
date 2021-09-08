@@ -3,6 +3,8 @@ package com.harisewak.downloader
 import android.content.Context
 import androidx.work.*
 import com.harisewak.downloader.other.REQUEST_ID
+import com.harisewak.downloader.other.RETRY_INTERVAL_MS
+import com.harisewak.downloader.other.logd
 import com.harisewak.downloader.room.DatabaseUtil
 import com.harisewak.downloader.workmanager.DownloadWorker
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +58,7 @@ class Downloader(private val context: Context) {
         val workRequest = OneTimeWorkRequestBuilder<DownloadWorker>()
             .setInputData(inputData)
             .setConstraints(constraints)
+            .setBackoffCriteria(BackoffPolicy.LINEAR, RETRY_INTERVAL_MS, TimeUnit.MILLISECONDS)
             .build()
 
         // todo find a way to connect download request with work request
