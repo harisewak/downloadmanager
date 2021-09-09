@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="msg_request_exists">Request already present!</string>
+    <string name="label_invalid_file_url">Invalid File URL</string>
 </resources>

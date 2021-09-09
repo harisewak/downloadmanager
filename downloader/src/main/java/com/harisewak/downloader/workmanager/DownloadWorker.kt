@@ -183,7 +183,8 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
             // second exit
             if (responseCode != HttpURLConnection.HTTP_OK) {
 
-                request.status = DownloadStatus.FAILED
+                request.fileName = applicationContext.getString(R.string.label_invalid_file_url)
+                request.status = DownloadStatus.NOT_DOWNLOADABLE
                 request.isDownloading = false
 
                 requestDao.update(request)
@@ -199,6 +200,17 @@ class DownloadWorker(appContext: Context, workerParams: WorkerParameters) :
                 urlConnection.contentLengthLong
             } else {
                 urlConnection.contentLength.toLong()
+            }
+
+            if (contentLength < 0) {
+
+                request.fileName = applicationContext.getString(R.string.label_invalid_file_url)
+                request.status = DownloadStatus.NOT_DOWNLOADABLE
+                request.isDownloading = false
+
+                requestDao.update(request)
+
+                return Result.failure()
             }
 
             request.total = contentLength

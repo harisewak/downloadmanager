@@ -49,7 +49,6 @@ class DownloadListAdapter :
     }
 
 
-
     override fun onCreateViewHolder(parent: ViewGroup, position: Int): DownloadItemViewHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding = ItemDownloadBinding.inflate(inflater, parent, false)
@@ -68,7 +67,16 @@ class DownloadListAdapter :
             val item = currentList[position]
 
             with(binding) {
-                tvFileName.text = item.fileName
+
+                val fileName: String =
+                    if (item.fileName == null || item.fileName!!.trim().isEmpty()) {
+                        binding.root.context.getString(R.string.label_file_name_missing)
+                    } else {
+                        item.fileName!!
+                    }
+
+                tvFileName.text = fileName
+
                 val status = item.status.toString()
                 tvStatus.text = status
 
